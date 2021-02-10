@@ -24,6 +24,10 @@ int ShellTestExternalViewEmbedder::GetSubmittedFrameCount() {
   return submitted_frame_count_;
 }
 
+SkISize ShellTestExternalViewEmbedder::GetLastSubmittedFrameSize() {
+  return last_submitted_frame_size_;
+}
+
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::CancelFrame() {}
 
@@ -59,8 +63,15 @@ SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame) {
+    std::unique_ptr<SurfaceFrame> frame,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
   frame->Submit();
+  if (frame && frame->SkiaSurface()) {
+    last_submitted_frame_size_ = SkISize::Make(frame->SkiaSurface()->width(),
+                                               frame->SkiaSurface()->height());
+  } else {
+    last_submitted_frame_size_ = SkISize::MakeEmpty();
+  }
   submitted_frame_count_++;
 }
 

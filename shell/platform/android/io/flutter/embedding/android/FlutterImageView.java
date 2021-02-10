@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -195,7 +196,11 @@ public class FlutterImageView extends View implements RenderSurface {
     // While the engine will also stop producing frames, there is a race condition.
     //
     // To avoid exceptions, check if a new image can be acquired.
-    if (imageQueue.size() < imageReader.getMaxImages()) {
+    int imageOpenedCount = imageQueue.size();
+    if (currentImage != null) {
+      imageOpenedCount++;
+    }
+    if (imageOpenedCount < imageReader.getMaxImages()) {
       final Image image = imageReader.acquireLatestImage();
       if (image != null) {
         imageQueue.add(image);
@@ -262,7 +267,9 @@ public class FlutterImageView extends View implements RenderSurface {
             Bitmap.createBitmap(
                 desiredWidth, desiredHeight, android.graphics.Bitmap.Config.ARGB_8888);
       }
-      currentBitmap.copyPixelsFromBuffer(imagePlane.getBuffer());
+      ByteBuffer buffer = imagePlane.getBuffer();
+      buffer.rewind();
+      currentBitmap.copyPixelsFromBuffer(buffer);
     }
   }
 
